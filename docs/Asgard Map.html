@@ -1,0 +1,609 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Asgard Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout concept: a vertical map of the suite in five bands, a detail panel beside it that changes per scenario, then the brainstorm in plain columns. */
+:root {
+  --bg: #eceff2;
+  --surface: #f8fafb;
+  --ink: #17212b;
+  --muted: #566475;
+  --line: #c3ccd6;
+  --line-strong: #8493a4;
+  --accent: #8f6208;
+  --accent-soft: #f1e6cc;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141b;
+    --surface: #161f29;
+    --ink: #e6ebf0;
+    --muted: #94a2b2;
+    --line: #2c3947;
+    --line-strong: #5f7186;
+    --accent: #e3b34f;
+    --accent-soft: #2e2713;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141b;
+  --surface: #161f29;
+  --ink: #e6ebf0;
+  --muted: #94a2b2;
+  --line: #2c3947;
+  --line-strong: #5f7186;
+  --accent: #e3b34f;
+  --accent-soft: #2e2713;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, 7vw, 64px); line-height: 1; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 18px; line-height: 1.25; font-weight: 700; }
+p { margin: 0; }
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 62ch; font-size: 18px; color: var(--ink); margin-top: 16px; }
+header { display: grid; gap: 14px; }
+
+/* controls */
+.controls { display: grid; gap: 12px; margin-top: 8px; }
+.group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.group-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); min-width: 96px; }
+.chip {
+  font: 500 14px/1 var(--font-body);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--line-strong); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip:focus-visible, .node:focus-visible, .fab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* map + panel */
+.stage { display: grid; grid-template-columns: minmax(0, 620px) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 24px; }
+.map-box { min-width: 0; }
+svg.map { width: 100%; height: auto; display: block; overflow: visible; }
+.zone { font: 500 11px var(--font-mono); letter-spacing: 0.09em; text-transform: uppercase; fill: var(--muted); }
+.node { cursor: pointer; transition: opacity .2s; }
+.node rect { fill: var(--surface); stroke: var(--ink); stroke-width: 2; rx: 6; transition: stroke .2s, stroke-width .2s; }
+.node .nm { font: 700 19px var(--font-display); fill: var(--ink); }
+.node .sb { font: 400 14px var(--font-body); fill: var(--muted); }
+.node .tg { font: 500 11px var(--font-mono); letter-spacing: 0.08em; fill: var(--muted); }
+.node.hold rect { stroke: var(--line-strong); stroke-width: 1.5; }
+.node.contrib rect { stroke: var(--ink); stroke-width: 1.25; }
+.node.kept rect { stroke: var(--line-strong); stroke-width: 1.5; }
+.node.idea rect { fill: none; stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.node.idea .nm { fill: var(--muted); }
+.node.ext rect { fill: var(--line); stroke: var(--line-strong); stroke-width: 1.5; }
+.node.client rect { stroke: var(--line-strong); stroke-width: 1.5; fill: var(--bg); }
+.node.dim { opacity: 0.28; }
+.node.hot rect { stroke: var(--accent); stroke-width: 3.5; }
+.node.hot .tg { fill: var(--accent); }
+.node.sel rect { stroke-dasharray: none; filter: drop-shadow(0 0 0 transparent); }
+.node.sel .nm { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.edge { fill: none; stroke: var(--line-strong); stroke-width: 1.5; transition: opacity .2s; }
+.edge.idea { stroke-dasharray: 4 5; }
+.edge.dim { opacity: 0.12; }
+.edge.hot { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 7 6; animation: flow 1.1s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -26; } }
+.ah path { fill: var(--line-strong); }
+.ahot path { fill: var(--accent); }
+.fab rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.5; rx: 6; }
+.fab { cursor: pointer; }
+.fab .nm { font: 700 15px var(--font-display); fill: var(--ink); }
+.fab .sb { font: 400 13px var(--font-body); fill: var(--muted); }
+.fab.hot rect { stroke: var(--accent); stroke-width: 3.5; }
+.fab.dim { opacity: 0.35; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 16px; height: 11px; border-radius: 2px; border: 2px solid var(--ink); background: var(--surface); }
+.sw.hold, .sw.kept { border-color: var(--line-strong); border-width: 1.5px; }
+.sw.idea { border: 1.5px dashed var(--line-strong); background: transparent; }
+.sw.ext { background: var(--line); border: 1.5px solid var(--line-strong); }
+.sw.client { border: 1.5px solid var(--line-strong); background: var(--bg); }
+.legend-note { margin-top: 10px; font-size: 13px; color: var(--muted); max-width: 60ch; }
+
+.panel { min-width: 0; display: grid; gap: 22px; position: sticky; top: 24px; }
+.panel .state { font-family: var(--font-mono); font-size: 12px; color: var(--accent); letter-spacing: 0.04em; }
+.panel h2 { margin-top: 4px; }
+.panel .lead { margin-top: 10px; font-size: 17px; max-width: 54ch; }
+.panel ol, .panel ul { margin: 0; padding-left: 22px; display: grid; gap: 7px; }
+.panel li { padding-left: 4px; }
+.panel li::marker { color: var(--muted); font-family: var(--font-mono); font-size: 14px; }
+.sub-h { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+.who { display: grid; gap: 6px; padding: 0; list-style: none; }
+.who li { padding: 0; display: grid; grid-template-columns: 112px 1fr; gap: 12px; }
+.who b { font-family: var(--font-display); }
+.who i { font-style: normal; color: var(--muted); }
+.detail { border-top: 1px solid var(--line); padding-top: 18px; min-height: 96px; }
+.detail .d-top { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.detail .d-status { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.detail p { margin-top: 6px; color: var(--ink); max-width: 56ch; }
+.detail .hint { color: var(--muted); }
+
+/* sections */
+.sec-head { display: grid; gap: 10px; margin-bottom: 26px; }
+.sec-head p { max-width: 62ch; color: var(--muted); font-size: 17px; }
+.dirs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 34px 40px; }
+.dir { border-top: 1px solid var(--ink); padding-top: 14px; display: grid; gap: 10px; align-content: start; }
+.dir .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.dir .tag.lean { color: var(--accent); }
+.dir p { color: var(--ink); }
+.dir .pulls { font-size: 14px; color: var(--muted); }
+.dir .pulls b { color: var(--ink); font-weight: 600; }
+.ideas { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.idea-row { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 8px 40px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.idea-row h3 { font-size: 17px; }
+.idea-row .reuse { font-size: 14px; color: var(--muted); margin-top: 6px; }
+.first { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 40px; align-items: start; }
+.first ol { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+.first .why { color: var(--muted); }
+.foot { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; max-width: 70ch; }
+
+@media (max-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .panel { position: static; }
+  .first { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .idea-row { grid-template-columns: minmax(0, 1fr); }
+  .group-label { min-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edge.hot { animation: none; }
+  .node, .edge { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Brainstorm &middot; 13 Nov 2026 &middot; folder ~/Projects/Asgard</div>
+    <h1>Asgard</h1>
+    <p class="lede">Seven apps you build or contribute to, one home, and a family that uses it. This page maps what the suite could become, which links between apps would make it feel like one place, and what to build first.</p>
+  </header>
+
+  <section aria-labelledby="map-h">
+    <div class="sec-head" style="margin-bottom:0">
+      <h2 id="map-h">The map</h2>
+      <p>Pick a scenario to light up the apps and links it needs. Pick a shared piece to see who provides it and who waits on it. Select any box for details.</p>
+    </div>
+    <div class="controls" id="controls"></div>
+    <div class="stage">
+      <div class="map-box">
+        <svg class="map" id="map" viewBox="0 0 600 712" role="img" aria-label="Map of the Asgard suite: apps grouped in five bands, with the links between them."></svg>
+        <div class="legend" aria-label="Legend">
+          <span><i class="sw"></i>Active</span>
+          <span><i class="sw hold"></i>On hold or kept</span>
+          <span><i class="sw idea"></i>Idea, name reserved</span>
+          <span><i class="sw ext"></i>Third-party</span>
+          <span><i class="sw client"></i>Clients</span>
+        </div>
+        <p class="legend-note">Every arrow is an idea. The vision file lists none of these links as built.</p>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section aria-labelledby="dir-h">
+    <div class="sec-head">
+      <h2 id="dir-h">What Asgard could be</h2>
+      <p>Four ways to describe the same pile of apps. They pull the work in different directions.</p>
+    </div>
+    <div class="dirs">
+      <div class="dir">
+        <span class="tag lean">Lean: start here</span>
+        <h3>A home hub for the family</h3>
+        <p>One sign-in, files arrive where they belong, and everyone hears when something is ready. This is what the vision file already describes.</p>
+        <p class="pulls"><b>Pulls on:</b> shared events and one sign-in.</p>
+      </div>
+      <div class="dir">
+        <span class="tag lean">Lean: build alongside</span>
+        <h3>An internet-optional home</h3>
+        <p>Everything useful works on the Wi-Fi alone. Share a photo phone to PC, play together, listen in sync, and pre-download before a trip.</p>
+        <p class="pulls"><b>Pulls on:</b> finding the home server and pairing once, and offline-first clients.</p>
+      </div>
+      <div class="dir">
+        <span class="tag">Option for later</span>
+        <h3>A subscription-replacement kit</h3>
+        <p>Chat, media, files and games that live in your house, with no account on someone else's server. If another family could install it, Asgard becomes a product.</p>
+        <p class="pulls"><b>Pulls on:</b> a one-command install, real docs, and two repos you don't own (Bragi, Tafl).</p>
+      </div>
+      <div class="dir">
+        <span class="tag">Option for later</span>
+        <h3>One integrated stack, built by you</h3>
+        <p>Identity, workflows, real-time chat and a download engine, working as a single system. The value is the engineering story more than the feature list.</p>
+        <p class="pulls"><b>Pulls on:</b> polish, write-ups and a clean demo more than new features.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="idea-h">
+    <div class="sec-head">
+      <h2 id="idea-h">Ideas the vision file doesn't have yet</h2>
+      <p>Each one reuses something already on the map, so it adds a feature without adding an app.</p>
+    </div>
+    <div class="ideas">
+      <div class="idea-row">
+        <h3>Gjallarhorn as a Huginn bot</h3>
+        <div><p>System alerts arrive in the family chat as messages from a bot. That saves a whole app and keeps one place to look.</p><p class="reuse">Reuses: Huginn, Sleipnir events.</p></div>
+      </div>
+      <div class="idea-row">
+        <h3>Guest pass</h3>
+        <div><p>Heimdall hands out a time-limited sign-in to visitors on your Wi-Fi, so a friend can join game night without an account.</p><p class="reuse">Reuses: Heimdall, Tafl, local discovery.</p></div>
+      </div>
+      <div class="idea-row">
+        <h3>Trip pack</h3>
+        <div><p>One list on the phone of shows, maps and game packs. Sleipnir fetches all of it on home Wi-Fi the night before.</p><p class="reuse">Reuses: Sleipnir scheduling, Tafl packs.</p></div>
+      </div>
+      <div class="idea-row">
+        <h3>Hliðskjálf as a read-only feed</h3>
+        <div><p>The home dashboard is a view over the same events everything else produces, not a separate monitoring stack.</p><p class="reuse">Reuses: the shared event feed.</p></div>
+      </div>
+      <div class="idea-row">
+        <h3>Muninn from the share sheet</h3>
+        <div><p>Photo backup that rides on the phone-to-PC path from scenario 3. Share once, and it lands in the right folder.</p><p class="reuse">Reuses: Sleipnir receiving files, pairing.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="first-h">
+    <div class="first">
+      <div class="sec-head" style="margin:0">
+        <h2 id="first-h">The smallest first link</h2>
+        <p class="why">Pick one link that proves the model before anything else. Sleipnir already leaves room for events, and Huginn already exists as somewhere to show them.</p>
+      </div>
+      <ol>
+        <li>Sleipnir sends a small "download finished" message when a file completes.</li>
+        <li>Huginn accepts it through one webhook and posts it in a family channel.</li>
+        <li>That is the first half of movie night, and it proves the event idea with two apps.</li>
+      </ol>
+    </div>
+  </section>
+
+  <p class="foot">Built from <code>Asgard/docs/suite-vision.md</code> and the app list in this folder. Roles and links are proposals. Statuses come from the vision file and were not re-checked against each repo.</p>
+</div>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 160, H = 66;
+  var X = [30, 220, 410];
+  var Y = [50, 170, 290, 410, 530];
+
+  var NODES = [
+    { id: "phones", name: "Phones", sub: "browser, Android", st: "client", tag: "CLIENTS", c: 0, r: 0,
+      info: "Where the family clicks, shares and plays: browser extensions, Android apps and web UIs that talk to the home server." },
+    { id: "heimdall", name: "Heimdall", sub: "sign-in (OIDC)", st: "active", tag: "ACTIVE", c: 1, r: 0,
+      info: "Your OAuth 2.1 and OpenID Connect provider (.NET 10, PostgreSQL, multi-tenant). It is the single sign-on for the suite." },
+    { id: "bifrost", name: "Bifröst", sub: "home gateway", st: "idea", tag: "IDEA", c: 2, r: 0,
+      info: "A gateway into the home network, such as a reverse proxy or VPN, guarded by Heimdall. Name reserved." },
+    { id: "sleipnir", name: "Sleipnir", sub: "downloads & sharing", st: "active", tag: "ACTIVE", c: 0, r: 1,
+      info: "The download engine, becoming a background service with a TUI, web UI, browser extensions and Android clients. Also LAN file sharing." },
+    { id: "jellyfin", name: "Jellyfin", sub: "streaming", st: "ext", tag: "THIRD-PARTY", c: 1, r: 1,
+      info: "The media server. It replaces the dropped HomeFlix. Sleipnir drops finished videos into its library folders." },
+    { id: "bragi", name: "Bragi", sub: "synced audio", st: "contrib", tag: "CONTRIBUTING", c: 2, r: 1,
+      info: "Code name for Roundelay: LAN audio sync with QR pairing, a host fingerprint and per-guest keys. Not your repo, you contribute." },
+    { id: "gjall", name: "Gjallarhorn", sub: "alerts", st: "idea", tag: "IDEA", c: 0, r: 2,
+      info: "Notifications and alerts. Name reserved, and it may turn out better as a Huginn bot than as its own app." },
+    { id: "huginn", name: "Huginn", sub: "family chat", st: "active", tag: "ACTIVE", c: 1, r: 2,
+      info: "Real-time chat (Angular and NestJS). Heimdall sign-in is planned. Carries notifications and game invites." },
+    { id: "norns", name: "Norns", sub: "workflows", st: "hold", tag: "ON HOLD", c: 2, r: 2,
+      info: "Multi-tenant workflow and approval engine, formerly CoreOps. On hold since January 2026. Plans to sign in with Heimdall." },
+    { id: "tafl", name: "Tafl", sub: "family games", st: "contrib", tag: "CONTRIBUTING", c: 0, r: 3,
+      info: "Code name for JsGames: an offline games PWA and Android app with an optional PHP and MySQL sync backend. Not your repo, you contribute." },
+    { id: "rata", name: "Ratatoskr", sub: "TUI file explorer", st: "kept", tag: "KEPT", c: 1, r: 3,
+      info: "A .NET TUI file explorer, formerly TuiFileExplorer. A sibling TUI to Sleipnir's, so it could share a look." },
+    { id: "muninn", name: "Muninn", sub: "photos & notes", st: "idea", tag: "IDEA", c: 0, r: 4,
+      info: "Photo backup, notes and memories. Name reserved." },
+    { id: "mimir", name: "Mímir", sub: "search", st: "idea", tag: "IDEA", c: 1, r: 4,
+      info: "A knowledge base and search across the suite. Name reserved." },
+    { id: "hlid", name: "Hliðskjálf", sub: "home dashboard", st: "idea", tag: "IDEA", c: 2, r: 4,
+      info: "A home dashboard and monitoring view. Name reserved." }
+  ];
+  var ZONES = ["Entry", "Media & files", "Talk & decide", "Play & browse", "Remember & watch"];
+
+  var EDGES = [
+    { id: "phone_sleipnir", d: "M110 116 V167" },
+    { id: "sleipnir_jelly", d: "M190 203 H217" },
+    { id: "jelly_bragi", d: "M380 203 H407" },
+    { id: "sleipnir_huginn", d: "M150 236 V274 H260 V287" },
+    { id: "norns_sleipnir", d: "M520 290 V252 H70 V239" },
+    { id: "norns_huginn", d: "M410 323 H383" },
+    { id: "huginn_gjall", d: "M220 323 H193" },
+    { id: "huginn_tafl", d: "M300 356 V383 H110 V407" },
+    { id: "sleipnir_tafl", d: "M30 203 H12 V443 H27" }
+  ];
+
+  var FABRIC = [
+    { id: "identity", name: "Sign-in", sub: "Heimdall: built", x: 30 },
+    { id: "events", name: "Events", sub: "not built yet", x: 220 },
+    { id: "discovery", name: "Discovery", sub: "prior art: Bragi", x: 410 }
+  ];
+
+  var VIEWS = {
+    overview: {
+      label: "Overview", group: "",
+      title: "The whole suite",
+      state: "7 apps in the folder, 1 third-party, 5 reserved ideas",
+      lead: "Heimdall guards the gate, Sleipnir brings files in, Huginn tells people, and Norns decides. The rest of the map is names held for later.",
+      nodes: [], edges: [],
+      needs: ["A shared event feed between apps", "One sign-in accepted by each app", "A way to find the home server on the Wi-Fi"],
+      needsTitle: "What every scenario below leans on"
+    },
+    movie: {
+      label: "Movie night", group: "Scenarios",
+      title: "Movie night",
+      state: "Touches 5 apps",
+      lead: "A tap on a phone ends with a video in the Jellyfin library, the family told, and everyone listening in sync.",
+      steps: ["Someone taps the browser extension on a phone.", "Sleipnir on the home server downloads the video into the Jellyfin library folder.", "Jellyfin rescans the library.", "Huginn tells the family group it is ready.", "Bragi syncs the audio to everyone's headphones."],
+      nodes: ["phones", "sleipnir", "jellyfin", "huginn", "bragi"],
+      edges: ["phone_sleipnir", "sleipnir_jelly", "sleipnir_huginn", "jelly_bragi"],
+      needs: ["A \"download finished\" event from Sleipnir", "A per-download destination folder", "A Huginn bot that posts events", "How Bragi gets the movie's audio (open question)"]
+    },
+    approve: {
+      label: "Can I download this?", group: "Scenarios",
+      title: "\"Can I download this?\"",
+      state: "Touches 4 apps",
+      lead: "A big download waits for the admin, then runs overnight.",
+      steps: ["A family member requests a large download.", "A Norns workflow starts and Huginn pings the admin.", "The admin approves.", "Sleipnir schedules the download for the night."],
+      nodes: ["phones", "norns", "huginn", "sleipnir"],
+      edges: ["phone_sleipnir", "norns_sleipnir", "norns_huginn"],
+      needs: ["A \"needs approval\" state in Sleipnir", "Norns brought back from on hold", "Sign-in in both, so the requester is known", "Download scheduling in Sleipnir"]
+    },
+    share: {
+      label: "Phone to PC", group: "Scenarios",
+      title: "Phone to PC, no cable",
+      state: "Touches 2 apps",
+      lead: "Send a photo from the phone to the home PC over Wi-Fi. No internet and no account.",
+      steps: ["Share a photo from the phone's share sheet to Sleipnir.", "The phone finds the home PC on the Wi-Fi.", "The file lands in a chosen folder on the PC."],
+      nodes: ["phones", "sleipnir"],
+      edges: ["phone_sleipnir"],
+      needs: ["Finding the home server and pairing once", "An Android share target in the Sleipnir client", "A receive folder with sensible defaults"]
+    },
+    games: {
+      label: "Games night", group: "Scenarios",
+      title: "Family games night",
+      state: "Touches 3 apps",
+      lead: "Chess or backgammon over the home network, invited through chat, with scores under one family sign-in.",
+      steps: ["Send an invite from Huginn.", "Two phones find each other over the home network.", "Play chess or backgammon.", "Scores sync under one family sign-in (Heimdall, later)."],
+      nodes: ["tafl", "huginn", "heimdall"],
+      edges: ["huginn_tafl"],
+      needs: ["LAN multiplayer in Tafl", "A game-invite message type in Huginn", "The games adopting Heimdall (optional, later)"]
+    },
+    updates: {
+      label: "App updates at home", group: "Scenarios",
+      title: "App updates at home",
+      state: "Touches 3 apps",
+      lead: "The home server downloads a new game APK or puzzle pack once, and every phone gets it from the PC.",
+      steps: ["The home server downloads the new Games APK or puzzle pack once.", "Family phones fetch it from the PC over Wi-Fi."],
+      nodes: ["sleipnir", "tafl", "phones"],
+      edges: ["sleipnir_tafl", "phone_sleipnir"],
+      needs: ["Sleipnir serving files to the LAN", "Tafl checking the home server for updates", "Discovery, so phones find the server"]
+    },
+    trip: {
+      label: "Before a trip", group: "Scenarios",
+      title: "Before a trip",
+      state: "Touches 3 apps",
+      lead: "On home Wi-Fi, the phone fetches everything it will need, then works offline on the road.",
+      steps: ["On home Wi-Fi, Sleipnir on the phone pre-downloads shows, maps or game packs.", "Everything plays offline during the trip."],
+      nodes: ["phones", "sleipnir", "tafl"],
+      edges: ["phone_sleipnir", "sleipnir_tafl"],
+      needs: ["Scheduling or a \"fetch now\" list in the Android client", "Game packs that install offline"]
+    },
+    identity: {
+      label: "Sign-in", group: "Shared pieces",
+      title: "One sign-in for the family",
+      state: "Heimdall exists. Apps adopt it one by one.",
+      lead: "Heimdall issues the account. Each app decides when it starts accepting it.",
+      roles: { heimdall: "PROVIDES", huginn: "PLANNED", norns: "PLANNED", sleipnir: "LATER", tafl: "MAYBE LATER", bifrost: "GUARDS" },
+      who: [["Heimdall", "issues the sign-in"], ["Huginn", "plans to use it"], ["Norns", "plans to use it"], ["Sleipnir", "built-in pairing first, Heimdall later"], ["Tafl", "could adopt it later"]],
+      needs: ["Keep Sleipnir's sign-in pluggable, with users and roles that can map to a Heimdall subject later", "Decide how guests sign in (see Guest pass)"]
+    },
+    events: {
+      label: "Events", group: "Shared pieces",
+      title: "Events between apps",
+      state: "Not built. Sleipnir's design leaves room for it.",
+      lead: "An app announces something that happened. Others react.",
+      roles: { sleipnir: "EMITS", huginn: "SHOWS", norns: "DRIVES", gjall: "ROUTES" },
+      who: [["Sleipnir", "download finished, share received"], ["Huginn", "shows them as messages"], ["Norns", "can hold a download for approval"], ["Gjallarhorn", "alerts, maybe just a Huginn bot"]],
+      needs: ["Smallest version: Sleipnir calls a webhook that Huginn exposes", "Grow into a shared feed only when a third app needs it"]
+    },
+    discovery: {
+      label: "Discovery & pairing", group: "Shared pieces",
+      title: "Find the home server and pair once",
+      state: "Prior art exists in Bragi.",
+      lead: "Several apps need \"find my home server on the Wi-Fi\". Solve it once.",
+      roles: { bragi: "PRIOR ART", sleipnir: "NEEDS", tafl: "NEEDS", phones: "NEEDS" },
+      who: [["Bragi", "QR pairing, host fingerprint, per-guest keys"], ["Sleipnir", "needs it for sharing"], ["Tafl", "needs it for LAN play"], ["Phones", "every client needs it"]],
+      needs: ["Reuse the idea from Bragi. It is not your repo, so check its licence before copying any code", "Design pairing as a small separate piece, not inside one app"]
+    }
+  };
+  var ORDER = ["overview", "movie", "approve", "share", "games", "updates", "trip", "identity", "events", "discovery"];
+  var FAB_VIEW = { identity: "identity", events: "events", discovery: "discovery" };
+
+  var svg = document.getElementById("map");
+  var controls = document.getElementById("controls");
+  var panel = document.getElementById("panel");
+  var current = "overview";
+  var selected = null;
+
+  function el(name, attrs, parent) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function txt(parent, cls, x, y, s) {
+    var t = el("text", { "class": cls, x: x, y: y }, parent);
+    t.textContent = s;
+    return t;
+  }
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  /* arrow heads */
+  var defs = el("defs", {}, svg);
+  [["ah", "ah"], ["ahot", "ahot"]].forEach(function (m) {
+    var mk = el("marker", { id: m[0], "class": m[1], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto" }, defs);
+    el("path", { d: "M0 1 L10 5 L0 9 z" }, mk);
+  });
+
+  /* zone labels */
+  ZONES.forEach(function (z, i) { txt(svg, "zone", 30, Y[i] - 14, z); });
+  txt(svg, "zone", 30, 626, "Shared pieces");
+
+  /* edges */
+  var edgeEls = {};
+  EDGES.forEach(function (e) {
+    var p = el("path", { d: e.d, "class": "edge" + (e.id === "huginn_gjall" ? " idea" : ""), "marker-end": "url(#ah)" }, svg);
+    edgeEls[e.id] = p;
+  });
+
+  /* nodes */
+  var nodeEls = {};
+  var byId = {};
+  NODES.forEach(function (n) {
+    byId[n.id] = n;
+    var x = X[n.c], y = Y[n.r];
+    var g = el("g", { "class": "node " + n.st, tabindex: "0", role: "button", "data-id": n.id, "aria-label": n.name + ", " + n.sub + ", " + n.tag.toLowerCase() }, svg);
+    el("rect", { x: x, y: y, width: W, height: H }, g);
+    txt(g, "nm", x + 12, y + 26, n.name);
+    txt(g, "sb", x + 12, y + 44, n.sub);
+    n.tagEl = txt(g, "tg", x + 12, y + 59, n.tag);
+    g.addEventListener("click", function () { select(n.id); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(n.id); } });
+    nodeEls[n.id] = g;
+  });
+
+  /* shared pieces strip */
+  var fabEls = {};
+  FABRIC.forEach(function (f) {
+    var g = el("g", { "class": "fab", tabindex: "0", role: "button", "aria-label": "Shared piece: " + f.name + ", " + f.sub }, svg);
+    el("rect", { x: f.x, y: 640, width: W, height: 56 }, g);
+    txt(g, "nm", f.x + 12, 664, f.name);
+    txt(g, "sb", f.x + 12, 685, f.sub);
+    g.addEventListener("click", function () { setView(FAB_VIEW[f.id]); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setView(FAB_VIEW[f.id]); } });
+    fabEls[f.id] = g;
+  });
+
+  /* controls */
+  var chipEls = {};
+  function chipGroup(label, ids) {
+    var wrap = document.createElement("div");
+    wrap.className = "group";
+    if (label) { var l = document.createElement("span"); l.className = "group-label"; l.textContent = label; wrap.appendChild(l); }
+    ids.forEach(function (id) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.id = "chip-" + id; b.textContent = VIEWS[id].label;
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () { setView(id); });
+      wrap.appendChild(b); chipEls[id] = b;
+    });
+    controls.appendChild(wrap);
+  }
+  chipGroup("", ["overview"]);
+  chipGroup("Scenarios", ["movie", "approve", "share", "games", "updates", "trip"]);
+  chipGroup("Shared pieces", ["identity", "events", "discovery"]);
+
+  function setView(id) {
+    current = id;
+    var v = VIEWS[id];
+    var focusSet = {};
+    v.nodes.forEach(function (n) { focusSet[n] = true; });
+    var rolesFor = v.roles || {};
+    Object.keys(rolesFor).forEach(function (n) { focusSet[n] = true; });
+    var any = Object.keys(focusSet).length > 0;
+
+    NODES.forEach(function (n) {
+      var g = nodeEls[n.id];
+      var hot = !!focusSet[n.id];
+      g.classList.toggle("hot", any && hot);
+      g.classList.toggle("dim", any && !hot);
+      n.tagEl.textContent = (any && hot && rolesFor[n.id]) ? rolesFor[n.id] : n.tag;
+    });
+    var edgeSet = {};
+    v.edges.forEach(function (e) { edgeSet[e] = true; });
+    var edgeAny = v.edges.length > 0;
+    EDGES.forEach(function (e) {
+      var p = edgeEls[e.id];
+      var hot = !!edgeSet[e.id];
+      p.classList.toggle("hot", hot);
+      var dim = (any || edgeAny) && !hot;
+      p.classList.toggle("dim", dim);
+      p.setAttribute("marker-end", hot ? "url(#ahot)" : "url(#ah)");
+    });
+    FABRIC.forEach(function (f) {
+      var g = fabEls[f.id];
+      var isFab = (id === "identity" || id === "events" || id === "discovery");
+      g.classList.toggle("hot", isFab && FAB_VIEW[f.id] === id);
+      g.classList.toggle("dim", isFab && FAB_VIEW[f.id] !== id);
+    });
+    ORDER.forEach(function (k) { chipEls[k].setAttribute("aria-pressed", String(k === id)); });
+    renderPanel();
+  }
+
+  function select(id) {
+    selected = id;
+    NODES.forEach(function (n) { nodeEls[n.id].classList.toggle("sel", n.id === id); });
+    renderDetail();
+  }
+
+  function renderDetail() {
+    var d = document.getElementById("detail");
+    if (!d) return;
+    if (!selected) { d.innerHTML = '<p class="hint">Select a box on the map to read what it is.</p>'; return; }
+    var n = byId[selected];
+    d.innerHTML = '<div class="d-top"><h3>' + esc(n.name) + '</h3><span class="d-status">' + esc(n.tag) + '</span></div><p>' + esc(n.info) + '</p>';
+  }
+
+  function renderPanel() {
+    var v = VIEWS[current];
+    var h = '<div><div class="state">' + esc(v.state) + '</div><h2>' + esc(v.title) + '</h2><p class="lead">' + esc(v.lead) + '</p></div>';
+    if (v.steps) {
+      h += '<div><div class="sub-h">How it plays out</div><ol>' + v.steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol></div>";
+    }
+    if (v.who) {
+      h += '<div><div class="sub-h">Who does what</div><ul class="who">' + v.who.map(function (w) { return "<li><b>" + esc(w[0]) + "</b><i>" + esc(w[1]) + "</i></li>"; }).join("") + "</ul></div>";
+    }
+    h += '<div><div class="sub-h">' + esc(v.needsTitle || "Still to build") + '</div><ul>' + v.needs.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ul></div>";
+    h += '<div class="detail" id="detail"></div>';
+    panel.innerHTML = h;
+    renderDetail();
+  }
+
+  /* hash routing for the views */
+  function fromHash() {
+    var k = (location.hash || "").replace("#", "");
+    return VIEWS[k] ? k : "overview";
+  }
+  var origSet = setView;
+  setView = function (id) {
+    origSet(id);
+    try { if (location.hash.replace("#", "") !== id) history.replaceState(null, "", id === "overview" ? location.pathname + location.search : "#" + id); } catch (e) {}
+  };
+  window.addEventListener("hashchange", function () { origSet(fromHash()); });
+  origSet(fromHash());
+})();
+</script>
+
+</body></html>
