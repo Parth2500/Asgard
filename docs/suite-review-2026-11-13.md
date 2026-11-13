@@ -3,6 +3,10 @@
 *2026-11-13. Written from the suite docs, each app's design docs, and spot checks of the code.
 Where a claim comes from code and not a doc, it says so. Nothing was built or changed.*
 
+> **Superseded in part.** The owner answered this review's questions on 2026-11-14. The outcome is
+> in [`decisions.md`](decisions.md). Sections 6 and 7 below are kept as the record of what was
+> proposed, not as the plan.
+
 ## 1. The short version
 
 The suite has two halves built on opposite assumptions, and the hard problems all sit on the line
