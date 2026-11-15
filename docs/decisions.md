@@ -177,6 +177,50 @@ Background: [`suite-review-2026-11-13.md`](suite-review-2026-11-13.md).
 - **Cost:** one manual step per release, per extension. The owner is the only signer.
 - **Later, if needed:** an offline root key that approves a short-lived automatic key.
 
+## S15. Every device reaches the home through a small app of ours
+
+- **Decision (2026-11-15):** the family will use Android and iOS phones, Windows, Linux and macOS
+  computers, Chrome, Edge, Firefox and Safari, and TVs. Not all at once, but the design must allow
+  every one. The same rule holds on each: a device pairs with Bifröst once, **through a small app of
+  ours**. The app pins the home's key, keeps the device token in the platform's key store, and shows
+  the extensions' screens in the system web view.
+- **Browser extensions never talk to the home directly.** They hand the request to our app on the
+  same device, through the browser's native messaging. A Sleipnir extension on a laptop that is a
+  Bifröst client sends the download to the home this way. With a standalone Sleipnir on that laptop,
+  it can also offer "download here". On the host machine the desk companion plays the app's part,
+  and reaches Bifröst through the admin socket.
+- **Per platform:**
+
+  | Device | Client | Browser extensions |
+  |---|---|---|
+  | Android phone, Android TV | .NET for Android thin shell (S13). TVs pair by the 6-digit code | — |
+  | Windows, Linux, macOS | A small desktop client: pairs, pins, shows the screens in the system web view (WebView2, WebKitGTK, WKWebView) | Chrome, Edge and Firefox: one WebExtension codebase, through native messaging to the desktop client |
+  | iPhone, iPad | .NET for iOS, the same thin shell | Safari: packaged inside the app, as Apple requires |
+  | Safari on macOS | — | Packaged inside the macOS desktop client |
+  | Apple TV | A tvOS app, later. Pairs by code | — |
+  | Other TVs (web apps only) | They cannot pin a key, like a browser. View-only, or not supported | — |
+  | A browser with no app of ours | The view-only fallback (S8) | — |
+
+- **Order [proposed, owner to confirm]:** Android phone and TV, then the desktop client with the
+  Chrome and Firefox extension, then iPhone, iPad and Safari, then Apple TV.
+- **Settle now, so later platforms need no redesign:**
+  1. One shared .NET client library: pairing, pinning, the token and the API types. The Android, iOS
+     and desktop apps all use it. `Bifrost.Core` already has only framework references for this reason.
+  2. The pinning test (README, next step 1) runs on every web view engine: Android WebView,
+     WKWebView, WebView2 and WebKitGTK. It covers every request a screen makes, video segments and
+     WebSockets included.
+  3. One local protocol between a browser extension and our app, for every browser.
+  4. Every screen stays web-based (Heimdall ADR 001), so no platform needs its own screens.
+- **Why:** a browser extension cannot pin a self-signed key (Chrome cannot inspect certificates at
+  all), and a browser on another device is view-only (S8). Our app already pins, so routing every
+  extension through it solves pinning once, on every platform.
+- **Cost:** one thin native app per platform family, and an Apple developer account for iOS and Safari.
+- **Open, for later:**
+  - Away from home no device reaches the home (S7, design §2). People will expect "send a download
+    home from my phone at work". If that is wanted, it would be a request through Huginn that the
+    home picks up, never an inbound connection.
+  - The other route around pinning, a real HTTPS name for the home, stays parked (design §2).
+
 ---
 
 ## Target scenario
