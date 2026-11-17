@@ -23,7 +23,7 @@ Milestones are the design's order of work (`Bifrost/docs/design.md` §12), plus 
 
 **Step 4: Client app**
 - Pinning test on every web view engine — testing (S15: Android WebView, WKWebView, WebView2, WebKitGTK)
-- Shared .NET client library — feature (built: pairing and the pinned HTTP client; calls to extensions' screens still to come)
+- Shared .NET client library — feature (built: pairing and the pinned HTTP client; `BifrostClient` reads me, extensions and an extension's address)
 - Android app, first cut — feature
 
 **Step 5: Install and update**
