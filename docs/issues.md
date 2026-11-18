@@ -19,7 +19,7 @@ GitHub's default labels (`enhancement`, `question`, …) are not used for roadma
 
 What exists when the issue is closed, as a short noun phrase. Capital first letter, no full stop.
 
-- Good: `Pairing by a compared 6-digit code`, `Architecture tests for the layer rules`
+- Good: `Pairing by a compared 8-digit code`, `Architecture tests for the layer rules`
 - Not: `Implement pairing`, `[Bifrost] pairing stuff`
 
 ## The body

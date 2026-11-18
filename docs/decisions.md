@@ -193,7 +193,7 @@ Background: [`suite-review-2026-11-13.md`](suite-review-2026-11-13.md).
 
   | Device | Client | Browser extensions |
   |---|---|---|
-  | Android phone, Android TV | .NET for Android thin shell (S13). TVs pair by the 6-digit code | — |
+  | Android phone, Android TV | .NET for Android thin shell (S13). TVs pair by the 8-digit code | — |
   | Windows, Linux, macOS | A small desktop client: pairs, pins, shows the screens in the system web view (WebView2, WebKitGTK, WKWebView) | Chrome, Edge and Firefox: one WebExtension codebase, through native messaging to the desktop client |
   | iPhone, iPad | .NET for iOS, the same thin shell | Safari: packaged inside the app, as Apple requires |
   | Safari on macOS | — | Packaged inside the macOS desktop client |

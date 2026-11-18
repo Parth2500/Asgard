@@ -9,8 +9,8 @@ Milestones are the design's order of work (`Bifrost/docs/design.md` §12), plus 
 
 **Step 2: Host an extension**
 - Run extensions and route `/x/<name>` — feature (built)
-- System service with the admin socket — feature (plan 2c)
-- Ask the admin, with the desk companion — feature (plan 2d)
+- System service with the admin socket — feature (built, checked under the real service)
+- Ask the admin, with the desk companion — feature (built)
 
 **Step 3: LAN**
 - Home key and HTTPS on the home network — security (built)
@@ -19,16 +19,16 @@ Milestones are the design's order of work (`Bifrost/docs/design.md` §12), plus 
 - Discovery with mDNS — feature (announcing is built through Avahi; browsing from a client is step 4)
 - View-only browser fallback — feature (built, off by default)
 - polkit prompt for host-only actions — security (built for `identity rotate`; other host-only actions come with their features)
-- Audit log for pairing path B — security
+- Audit log for pairing path B — security (built: `join.approved` and `join.rejected`)
 
 **Step 4: Client app**
 - Pinning test on every web view engine — testing (S15: Android WebView, WKWebView, WebView2, WebKitGTK)
 - Shared .NET client library — feature (built: pairing and the pinned HTTP client; `BifrostClient` reads me, extensions and an extension's address)
-- Android app, first cut — feature (builds; paired with a real phone; Sleipnir's screens not yet shown)
+- Android app, first cut — feature (built and released in 0.2.0: pairing by link, QR or code; Home and Downloads, Downloads being Sleipnir in a pinned web view)
 
 **Step 5: Install and update**
-- Signed releases with offline keys — security (S14)
-- Install, update and roll back extensions — feature
+- Signed releases with offline keys — security (S14; built, 0.2.0 and Sleipnir 0.11.20 are signed and install)
+- Install, update and roll back extensions — feature (built: from a file or the latest GitHub release; updates offered daily; rollback)
 - Bifröst updates itself — feature
 
 **Step 6: Folders and events**
@@ -47,7 +47,7 @@ Milestones are the design's order of work (`Bifrost/docs/design.md` §12), plus 
 ## Sleipnir (`Parth2500/Sleipnir`)
 
 **Under Bifröst**
-- Pending downloads ask the admin — feature (blocked by Bifröst "Ask the admin")
+- Pending downloads ask the admin — feature (built)
 - Folders from Bifröst — feature (blocked by Bifröst step 6)
 - `sleipnir.download.finished` event — feature (blocked by Bifröst step 6)
 - Remove a person's downloads — feature
